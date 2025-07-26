@@ -35,7 +35,13 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: [
+    'http://localhost:3000', 
+    'http://127.0.0.1:3000',
+    'https://khelwell-fe.vercel.app',
+    'https://khelwell-frontend.vercel.app',
+    'https://khelwell.vercel.app'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -96,10 +102,24 @@ const PORT = process.env.PORT || 5001;
 const startServer = async () => {
   await initializeDatabase();
   
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📊 API Health: http://localhost:${PORT}/api/health`);
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📊 API Health: http://localhost:${PORT}/api/health`);
+    });
+  }
 };
 
-startServer().catch(console.error); 
+// For Vercel serverless deployment
+if (process.env.NODE_ENV === 'production') {
+  // Initialize database without starting server
+  initializeDatabase().catch(console.error);
+}
+
+// Start server only in development
+if (process.env.NODE_ENV !== 'production') {
+  startServer().catch(console.error);
+}
+
+// Export for Vercel
+module.exports = app; 
