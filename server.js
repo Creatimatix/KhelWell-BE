@@ -5,31 +5,55 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config({ path: './config.env' });
 
-// Import database configuration
-const { sequelize, testConnection } = require('./config/database');
+// Import database configuration (only if environment variables are set)
+let sequelize, testConnection;
+let User, Turf, Booking, Event, Slot, Notification, OTP, Review;
 
-// Import models
-const User = require('./models/User');
-const Turf = require('./models/Turf');
-const Booking = require('./models/Booking');
-const Event = require('./models/Event');
-const Slot = require('./models/Slot');
-const Notification = require('./models/Notification');
-const OTP = require('./models/OTP');
-const Review = require('./models/Review');
+// Check if database environment variables are set
+const hasDatabaseConfig = process.env.DB_HOST && process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_NAME;
 
-// Import routes
-const authRoutes = require('./routes/auth');
-const turfRoutes = require('./routes/turfs');
-const bookingRoutes = require('./routes/bookings');
-const eventRoutes = require('./routes/events');
-const userRoutes = require('./routes/users');
-const adminRoutes = require('./routes/admin');
-const slotRoutes = require('./routes/slots');
-const notificationRoutes = require('./routes/notifications');
-const ownerRoutes = require('./routes/owner');
-const otpRoutes = require('./routes/otp');
-const reviewRoutes = require('./routes/reviews');
+if (hasDatabaseConfig) {
+  try {
+    const dbConfig = require('./config/database');
+    sequelize = dbConfig.sequelize;
+    testConnection = dbConfig.testConnection;
+    
+    // Import models only if database is configured
+    User = require('./models/User');
+    Turf = require('./models/Turf');
+    Booking = require('./models/Booking');
+    Event = require('./models/Event');
+    Slot = require('./models/Slot');
+    Notification = require('./models/Notification');
+    OTP = require('./models/OTP');
+    Review = require('./models/Review');
+  } catch (error) {
+    console.error('❌ Failed to load database configuration:', error);
+  }
+} else {
+  console.log('⚠️ Database environment variables not set, running in API-only mode');
+}
+
+// Import routes (only if database is configured)
+let authRoutes, turfRoutes, bookingRoutes, eventRoutes, userRoutes, adminRoutes, slotRoutes, notificationRoutes, ownerRoutes, otpRoutes, reviewRoutes;
+
+if (hasDatabaseConfig) {
+  try {
+    authRoutes = require('./routes/auth');
+    turfRoutes = require('./routes/turfs');
+    bookingRoutes = require('./routes/bookings');
+    eventRoutes = require('./routes/events');
+    userRoutes = require('./routes/users');
+    adminRoutes = require('./routes/admin');
+    slotRoutes = require('./routes/slots');
+    notificationRoutes = require('./routes/notifications');
+    ownerRoutes = require('./routes/owner');
+    otpRoutes = require('./routes/otp');
+    reviewRoutes = require('./routes/reviews');
+  } catch (error) {
+    console.error('❌ Failed to load routes:', error);
+  }
+}
 
 const app = express();
 
