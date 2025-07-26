@@ -105,18 +105,22 @@ const initializeDatabase = async () => {
   }
 };
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/turfs', turfRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/events', eventRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/slots', slotRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/owner', ownerRoutes);
-app.use('/api/otp', otpRoutes);
-app.use('/api/reviews', reviewRoutes);
+// Routes (only if database is configured)
+if (hasDatabaseConfig && authRoutes) {
+  app.use('/api/auth', authRoutes);
+  app.use('/api/turfs', turfRoutes);
+  app.use('/api/bookings', bookingRoutes);
+  app.use('/api/events', eventRoutes);
+  app.use('/api/users', userRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/slots', slotRoutes);
+  app.use('/api/notifications', notificationRoutes);
+  app.use('/api/owner', ownerRoutes);
+  app.use('/api/otp', otpRoutes);
+  app.use('/api/reviews', reviewRoutes);
+} else {
+  console.log('⚠️ Routes disabled - database not configured');
+}
 
 // Health check route
 app.get('/api/health', (req, res) => {
