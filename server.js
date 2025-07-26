@@ -76,6 +76,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Database connection and sync
 const initializeDatabase = async () => {
+  if (!hasDatabaseConfig) {
+    console.log('⚠️ Database not configured, skipping initialization');
+    return false;
+  }
+
   try {
     // Check if required environment variables are set
     const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
@@ -88,15 +93,21 @@ const initializeDatabase = async () => {
       return false;
     }
 
-    await testConnection();
+    if (testConnection) {
+      await testConnection();
+    }
     
-    // Set up model associations
-    Turf.hasMany(Review, { foreignKey: 'turf_id', as: 'reviews' });
-    Review.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-    Review.belongsTo(Turf, { foreignKey: 'turf_id', as: 'turf' });
+    // Set up model associations only if models are loaded
+    if (Turf && Review && User) {
+      Turf.hasMany(Review, { foreignKey: 'turf_id', as: 'reviews' });
+      Review.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+      Review.belongsTo(Turf, { foreignKey: 'turf_id', as: 'turf' });
+    }
     
-    await sequelize.sync({ alter: true });
-    console.log('✅ Database synchronized successfully');
+    if (sequelize) {
+      await sequelize.sync({ alter: true });
+      console.log('✅ Database synchronized successfully');
+    }
     return true;
   } catch (error) {
     console.error('❌ Database initialization error:', error);
