@@ -53,6 +53,17 @@ app.use(express.urlencoded({ extended: true }));
 // Database connection and sync
 const initializeDatabase = async () => {
   try {
+    // Check if required environment variables are set
+    const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+    const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+    
+    if (missingVars.length > 0) {
+      console.error('❌ Missing required environment variables:', missingVars);
+      console.log('Please set the following environment variables in Vercel:');
+      missingVars.forEach(varName => console.log(`- ${varName}`));
+      return false;
+    }
+
     await testConnection();
     
     // Set up model associations
@@ -62,9 +73,11 @@ const initializeDatabase = async () => {
     
     await sequelize.sync({ alter: true });
     console.log('✅ Database synchronized successfully');
+    return true;
   } catch (error) {
     console.error('❌ Database initialization error:', error);
     console.log('Please make sure MySQL is running and credentials are correct');
+    return false;
   }
 };
 
@@ -83,13 +96,37 @@ app.use('/api/reviews', reviewRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Turf Booking API is running' });
+  res.json({ 
+    status: 'OK', 
+    message: 'Turf Booking API is running',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Root route for basic testing
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'KhelWell Backend API',
+    version: '1.0.0',
+    status: 'running'
+  });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error('❌ Error occurred:', err);
+  console.error('❌ Error stack:', err.stack);
+  
+  // Don't expose internal errors in production
+  const message = process.env.NODE_ENV === 'production' 
+    ? 'Something went wrong!' 
+    : err.message;
+    
+  res.status(500).json({ 
+    message,
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 // 404 handler
@@ -114,7 +151,10 @@ const startServer = async () => {
 // For Vercel serverless deployment
 if (process.env.NODE_ENV === 'production') {
   // Initialize database without starting server
-  initializeDatabase().catch(console.error);
+  initializeDatabase().catch((error) => {
+    console.error('❌ Failed to initialize database in production:', error);
+    // Don't throw error to prevent function crash
+  });
 }
 
 // Start server only in development
