@@ -40,7 +40,8 @@ app.use(cors({
     'http://127.0.0.1:3000',
     'https://khelwell-fe.vercel.app',
     'https://khelwell-frontend.vercel.app',
-    'https://khelwell.vercel.app'
+    'https://khelwell.vercel.app',
+    process.env.FRONTEND_URL || 'https://khelwell-fe.vercel.app'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
